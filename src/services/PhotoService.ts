@@ -1,7 +1,93 @@
 
 import { Photo } from "../types/Photo";
+import { v4 as uuidv4 } from "uuid";
 
-// Sample photos - In a real app, these would be loaded from your repo
+// This function gets the actual photos from the public/photos directory
+export const getPhotos = async (): Promise<Photo[]> => {
+  try {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    // In a real production app, this would be a server-side function
+    // For this demo, we'll use a fetch to list the public directory
+    const response = await fetch('/photos');
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch photos directory');
+    }
+    
+    // This requires the server to return directory listing
+    // Note: This approach works in development but might not work in all environments
+    const html = await response.text();
+    
+    // Parse HTML to find image files
+    // This is a simple parser and may need adjustments based on server response
+    const imgRegex = /href="([^"]+\.(jpg|jpeg|png|gif|webp|svg))"/gi;
+    let match;
+    const photos: Photo[] = [];
+    
+    while ((match = imgRegex.exec(html)) !== null) {
+      const fileName = match[1];
+      
+      // Skip README.md or other non-image files
+      if (fileName.includes('README.md')) continue;
+      
+      // Create a photo object for each image
+      const photo: Photo = {
+        id: uuidv4(),
+        name: fileName,
+        src: `/photos/${fileName}`,
+        width: 800, // Default values, will be updated after image loads
+        height: 600,
+        size: 1024 * 1024, // Default 1MB size
+        createdAt: new Date(),
+        altText: fileName
+      };
+      
+      photos.push(photo);
+    }
+    
+    // If no photos found in directory, return sample photos for demonstration
+    if (photos.length === 0) {
+      console.log("No photos found in /photos directory. Using sample photos instead.");
+      return samplePhotos;
+    }
+    
+    // Update image dimensions by preloading
+    await Promise.all(
+      photos.map(photo => 
+        new Promise<void>(resolve => {
+          const img = new Image();
+          img.onload = () => {
+            photo.width = img.naturalWidth;
+            photo.height = img.naturalHeight;
+            resolve();
+          };
+          img.onerror = () => {
+            console.error(`Failed to load image: ${photo.src}`);
+            resolve();
+          };
+          img.src = photo.src;
+        })
+      )
+    );
+    
+    return photos;
+  } catch (error) {
+    console.error("Error loading photos:", error);
+    // Fallback to sample photos if there's an error
+    return samplePhotos;
+  }
+};
+
+export const getPhotoById = async (id: string): Promise<Photo | undefined> => {
+  // Simulate API delay
+  await new Promise(resolve => setTimeout(resolve, 300));
+  const photos = await getPhotos();
+  return photos.find(photo => photo.id === id);
+};
+
+// Sample photos - Used as fallback if directory reading fails
 const samplePhotos: Photo[] = [
   {
     id: "1",
@@ -64,16 +150,3 @@ const samplePhotos: Photo[] = [
     altText: "Colorful autumn leaves"
   }
 ];
-
-// This would be replaced with actual file loading logic in a real application
-export const getPhotos = async (): Promise<Photo[]> => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  return samplePhotos;
-};
-
-export const getPhotoById = async (id: string): Promise<Photo | undefined> => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 300));
-  return samplePhotos.find(photo => photo.id === id);
-};
