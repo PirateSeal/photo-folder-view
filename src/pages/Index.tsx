@@ -17,13 +17,15 @@ const Index = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
           <div>
             <h2 className="text-2xl font-bold text-gray-800 mb-2">Photo Gallery</h2>
-            <p className="text-muted-foreground">
-              {loading ? (
+            {loading ? (
+              <div className="text-muted-foreground">
                 <Skeleton className="h-4 w-[150px]" />
-              ) : (
-                `${photos.length} photos`
-              )}
-            </p>
+              </div>
+            ) : (
+              <p className="text-muted-foreground">
+                {photos.length} photos
+              </p>
+            )}
           </div>
           
           <SortControls sortConfig={sortConfig} onSortChange={setSortConfig} />

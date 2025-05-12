@@ -14,7 +14,16 @@ interface PhotoContextType {
   refreshPhotos: () => Promise<void>;
 }
 
-const PhotoContext = createContext<PhotoContextType | undefined>(undefined);
+const initialContext: PhotoContextType = {
+  photos: [],
+  loading: true,
+  error: null,
+  sortConfig: { option: 'date', direction: 'desc' },
+  setSortConfig: () => {},
+  refreshPhotos: async () => {},
+};
+
+const PhotoContext = createContext<PhotoContextType>(initialContext);
 
 export const PhotoProvider = ({ children }: { children: React.ReactNode }) => {
   const [photos, setPhotos] = useState<Photo[]>([]);
